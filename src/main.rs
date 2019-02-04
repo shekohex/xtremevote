@@ -6,7 +6,7 @@ extern crate rocket;
 
 #[macro_use]
 extern crate diesel;
-use crate::templates::{doc, Html};
+use rocket::response::content::Html;
 use diesel::prelude::*;
 use exitfailure::ExitFailure;
 use failure::Fail;
@@ -25,16 +25,14 @@ use std::{
   io::Read,
   net::{IpAddr, Ipv4Addr},
 };
-use typed_html::html;
 mod db;
 mod migrations;
-mod templates;
 
 #[database("app_database")]
 struct AppDatabase(diesel::MysqlConnection);
 
 const NOT_ALLOWED: &str = "You are Not Allowed To View This Page";
-
+const TEMPLATE: &str = include_str!("./template.html");
 /// Defines the different levels for log messages.
 #[derive(PartialEq, Eq, Debug, Clone, Copy, Deserialize, Serialize)]
 pub enum LoggingLevel {
@@ -127,6 +125,8 @@ enum VoteResult {
   NotReadyForVote(&'static str),
 }
 
+
+
 impl<'a, 'r> FromRequest<'a, 'r> for AllowedIPs {
   type Error = AppErrors;
 
@@ -145,40 +145,9 @@ impl<'a, 'r> FromRequest<'a, 'r> for AllowedIPs {
 }
 
 #[get("/")]
-fn index(config: State<AppConfig>) -> Html {
-  Html(doc(
-    &config.server_name,
-    html!(
-          <section class="hero is-success is-fullheight">
-            <div class="hero-body">
-              <div class="container has-text-centered">
-                <div class="column is-4 is-offset-4">
-                  <h3 class="title has-text-grey">"Login"</h3>
-                  <p class="subtitle has-text-grey">"Please login to proceed."</p>
-                  <div class="box">
-                    <form onsubmit="return false;">
-                      <div class="field">
-                        <div class="control">
-                          <input
-                            class="input is-large"
-                            type="text"
-                            id="username"
-                            autofocus={true}
-                            required={true}
-                          />
-                        </div>
-                      </div>
-                      <button id="vote" class="button is-block is-info is-large is-fullwidth">
-                        <i class="fas fa-vote-yea"></i> " Vote"
-                      </button>
-                    </form>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </section>
-    ),
-  ))
+fn index(config: State<AppConfig>) -> Html<String> {
+  let server_name = &config.server_name;
+  Html(TEMPLATE.replace("APP_TITLE", server_name))
 }
 
 #[get("/postback?<data..>")]

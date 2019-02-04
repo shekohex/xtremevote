@@ -10,14 +10,13 @@ toml = "0.4.10"
 failure = "0.1.5"
 exitfailure = "0.5.1"
 diesel_migrations = "1.4.0"
-typed-html = "0.1.1"
 lazy_static = "1.2.0"
 chrono = "0.4.6"
 
 [dependencies.rocket_contrib]
 version = "0.4.0"
 default-features = false
-features = ["diesel_mysql_pool", "serve"]
+features = ["diesel_mysql_pool"]
 
 [dependencies.serde]
 version = "1.0.87"
@@ -32,6 +31,6 @@ features = ["mysql", "chrono"]
 opt-level = 3
 debug = false
 rpath = false
-lto = true
+lto = false
 debug-assertions = false
 codegen-units = 1

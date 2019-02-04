@@ -1,0 +1,103 @@
+<html>
+  <head>
+    <title>APP_TITLE</title>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <script
+      defer="{true}"
+      src="https://use.fontawesome.com/releases/v5.7.1/js/all.js"
+      integrity="sha384-eVEQC9zshBn0rFj4+TU78eNA19HMNigMviK/PU/FFjLXqa/GKPgX58rvt5Z8PLs7"
+      crossorigin="anonymous"
+    ></script>
+    <link
+      href="https://fonts.googleapis.com/css?family=Open+Sans:300,400,700"
+      rel="stylesheet"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/bulma/0.7.2/css/bulma.min.css"
+    />
+    <style>
+      html,
+      body {
+        font-family: 'Open Sans', serif;
+        font-size: 14px;
+        font-weight: 300;
+      }
+
+      .hero.is-success {
+        background: #f2f6fa;
+      }
+
+      .hero .nav,
+      .hero.is-success .nav {
+        -webkit-box-shadow: none;
+        box-shadow: none;
+      }
+
+      .box {
+        margin-top: 5rem;
+      }
+
+      input {
+        font-weight: 300;
+      }
+
+      p {
+        font-weight: 700;
+      }
+
+      p.subtitle {
+        padding-top: 1rem;
+      }
+    </style>
+  </head>
+
+  <body>
+    <section class="hero is-success is-fullheight">
+      <div class="hero-body">
+        <div class="container has-text-centered">
+          <div class="column is-4 is-offset-4">
+            <h3 class="title has-text-grey">Login</h3>
+            <p class="subtitle has-text-grey">Please login to proceed.</p>
+            <div class="box">
+              <form onsubmit="return false;">
+                <div class="field">
+                  <div class="control">
+                    <input
+                      class="input is-large"
+                      type="text"
+                      id="username"
+                      pattern="[A-Za-z0-9]+"
+                      placeholder="Your Username"
+                      autofocus
+                      required
+                    />
+                  </div>
+                </div>
+                <button
+                  id="vote"
+                  class="button is-block is-info is-large is-fullwidth"
+                >
+                  <i class="fas fa-vote-yea"></i> Vote
+                </button>
+              </form>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+    <script>
+      const btn = document.getElementById('vote');
+      const usernameInput = document.getElementById('username');
+      btn.onclick = function(e) {
+        const username = usernameInput.value;
+        if (username !== ``) {
+          window.location.replace(`/vote/${username}`);
+        } else {
+          alert('Enter The Username');
+        }
+      };
+    </script>
+  </body>
+</html>
