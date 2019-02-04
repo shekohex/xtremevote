@@ -26,11 +26,12 @@ use std::{
 mod db;
 
 #[database("app_database")]
-struct AppDatabase(diesel::MysqlConnection);
+struct AppDatabase(diesel::SqliteConnection);
 
 const NOT_ALLOWED: &str = "You are Not Allowed To View This Page";
 const TEMPLATE: &str = include_str!("./template.html");
 const MIGRATIONS: &str = include_str!("./uvotes.sql");
+
 /// Defines the different levels for log messages.
 #[derive(PartialEq, Eq, Debug, Clone, Copy, Deserialize, Serialize)]
 pub enum LoggingLevel {
@@ -62,26 +63,17 @@ struct AppConfig {
   allowed_ips: Vec<IpAddr>,
   site_id: u32,
   vote_config: VoteConfig,
-  database_config: DatabaseConfig,
   port: u16,
   ip: Ipv4Addr,
   workers: u16,
   log_level: LoggingLevel,
+  database_url: String,
 }
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
 struct VoteConfig {
   time_limit: u8,
   points: u64,
-}
-
-#[derive(Clone, Debug, Deserialize, Serialize)]
-struct DatabaseConfig {
-  host: String,
-  port: u16,
-  username: String,
-  password: String,
-  database_name: String,
 }
 
 #[derive(Debug, Fail, Clone)]
@@ -202,17 +194,19 @@ fn vote(
     if diff < limit {
       return Err(AppErrors::NotReadyForVote);
     }
-    current_user.points += points_per_vote as u32;
+    current_user.points += points_per_vote as i32;
     diesel::update(uvotes.filter(username.eq(&data.custom)))
       .set(points.eq(current_user.points))
       .execute(&conn.0)
       .map_err(|e| AppErrors::DatabaseError(e.to_string()))?;
   } else {
+    let current_time = chrono::Local::now().naive_local();
     // It is a new Vote User
     let new_user = UserVote {
       username: data.custom.to_owned(),
       votingip: data.votingip.to_string(),
-      points: points_per_vote as u32,
+      points: points_per_vote as i32,
+      last_vote: current_time,
     };
     diesel::insert_into(uvotes)
       .values(new_user)
@@ -232,22 +226,9 @@ fn main() -> Result<(), ExitFailure> {
 
   let config: AppConfig = toml::from_str(&config_file)
     .map_err(|e| AppErrors::ConfigParseError(format!("{}", e)))?;
-  let mut database_config = HashMap::new();
+  let mut database_config: HashMap<&str, &str> = HashMap::new();
   let mut databases = HashMap::new();
-  let DatabaseConfig {
-    host,
-    port,
-    username,
-    password,
-    database_name,
-  } = &config.database_config;
-  database_config.insert(
-    "url",
-    Value::from(format!(
-      "mysql://{}:{}@{}:{}/{}",
-      username, password, host, port, database_name
-    )),
-  );
+  database_config.insert("url", &config.database_url);
   databases.insert("app_database", Value::from(database_config));
   let dbconfig = Config::build(Environment::active().unwrap())
     .address(config.ip.to_string())
@@ -263,9 +244,12 @@ fn main() -> Result<(), ExitFailure> {
     .manage(config);
 
   // Get database Connection.
+  println!("Testing Database Connection..");
   if let Some(conn) = AppDatabase::get_one(&server) {
     // Run Migiration.
+    println!("Checking for `uvotes` table.");
     conn.batch_execute(MIGRATIONS)?;
+    println!("Database is OK !");
   } else {
     panic!("Error Getting database Connection !");
   }

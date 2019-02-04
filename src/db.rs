@@ -1,9 +1,9 @@
 table! {
-    uvotes {
-        id -> Unsigned<Integer>,
-        username -> VarChar,
-        votingip -> VarChar,
-        points -> Unsigned<Integer>,
+    uvotes(id) {
+        id -> Integer,
+        username -> Text,
+        votingip -> Text,
+        points -> Integer,
         last_vote -> Timestamp,
     }
 }
@@ -13,10 +13,10 @@ pub mod models {
   use chrono::NaiveDateTime;
   #[derive(Queryable, PartialEq, Debug)]
   pub struct UVotes {
-    pub id: u32,
+    pub id: i32,
     pub username: String,
     pub votingip: String,
-    pub points: u32,
+    pub points: i32,
     pub last_vote: NaiveDateTime,
   }
 
@@ -25,6 +25,7 @@ pub mod models {
   pub struct UserVote {
     pub username: String,
     pub votingip: String,
-    pub points: u32,
+    pub points: i32,
+    pub last_vote: NaiveDateTime,
   }
 }

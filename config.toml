@@ -33,13 +33,9 @@ allowed_ips = [
   '2606:4700:30::6818:706c',
   ]
 
+# This the sqlite database url, or the place where it should be created.
+database_url = "votes.db"
+
 [vote_config]
 time_limit = 12 # Voting is once every 12 hours
 points = 100 # How many points for that account
-
-[database_config]
-host = "sql7.freemysqlhosting.net"
-port = 3306
-username = "sql7277220"
-password = "XAbRfqdrqq"
-database_name = "sql7277220"
