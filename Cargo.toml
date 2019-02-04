@@ -1,0 +1,30 @@
+[package]
+name = "xtremevote"
+version = "0.1.0"
+authors = ["Shady Khalifa <shekohex@gmail.com>"]
+edition = "2018"
+
+[dependencies]
+rocket = "0.4.0"
+toml = "0.4.10"
+failure = "0.1.5"
+exitfailure = "0.5.1"
+diesel_migrations = "1.4.0"
+typed-html = "0.1.1"
+lazy_static = "1.2.0"
+chrono = "0.4.6"
+
+[dependencies.rocket_contrib]
+version = "0.4.0"
+default-features = false
+features = ["diesel_mysql_pool"]
+
+[dependencies.serde]
+version = "1.0.86"
+features = ["derive"]
+
+[dependencies.diesel]
+version = "1.4.1"
+default-features = false
+features = ["mysql", "chrono"]
+
