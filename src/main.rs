@@ -1,20 +1,18 @@
 #![feature(proc_macro_hygiene, decl_macro)]
-#![recursion_limit = "256"]
 
 #[macro_use]
 extern crate rocket;
 
 #[macro_use]
 extern crate diesel;
-use rocket::response::content::Html;
-use diesel::prelude::*;
+use diesel::{connection::SimpleConnection, prelude::*};
 use exitfailure::ExitFailure;
 use failure::Fail;
 use rocket::{
   config::{Config, Environment, Value},
   http::Status,
   request::{Form, FromRequest},
-  response::Redirect,
+  response::{content::Html, Redirect},
   Outcome, Request, State,
 };
 use rocket_contrib::database;
@@ -26,13 +24,13 @@ use std::{
   net::{IpAddr, Ipv4Addr},
 };
 mod db;
-mod migrations;
 
 #[database("app_database")]
 struct AppDatabase(diesel::MysqlConnection);
 
 const NOT_ALLOWED: &str = "You are Not Allowed To View This Page";
 const TEMPLATE: &str = include_str!("./template.html");
+const MIGRATIONS: &str = include_str!("./uvotes.sql");
 /// Defines the different levels for log messages.
 #[derive(PartialEq, Eq, Debug, Clone, Copy, Deserialize, Serialize)]
 pub enum LoggingLevel {
@@ -124,8 +122,6 @@ enum VoteResult {
   #[response(status = 401)]
   NotReadyForVote(&'static str),
 }
-
-
 
 impl<'a, 'r> FromRequest<'a, 'r> for AllowedIPs {
   type Error = AppErrors;
@@ -269,7 +265,7 @@ fn main() -> Result<(), ExitFailure> {
   // Get database Connection.
   if let Some(conn) = AppDatabase::get_one(&server) {
     // Run Migiration.
-    migrations::run_with_output(&conn.0, &mut std::io::stdout())?;
+    conn.batch_execute(MIGRATIONS)?;
   } else {
     panic!("Error Getting database Connection !");
   }
