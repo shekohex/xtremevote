@@ -17,10 +17,10 @@ chrono = "0.4.6"
 [dependencies.rocket_contrib]
 version = "0.4.0"
 default-features = false
-features = ["diesel_mysql_pool"]
+features = ["diesel_mysql_pool", "serve"]
 
 [dependencies.serde]
-version = "1.0.86"
+version = "1.0.87"
 features = ["derive"]
 
 [dependencies.diesel]
