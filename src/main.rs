@@ -17,7 +17,7 @@ use rocket::{
   response::Redirect,
   Outcome, Request, State,
 };
-use rocket_contrib::{database, serve::StaticFiles};
+use rocket_contrib::database;
 use serde::{Deserialize, Serialize};
 use std::{
   collections::HashMap,
@@ -295,7 +295,6 @@ fn main() -> Result<(), ExitFailure> {
   let server = rocket::custom(dbconfig)
     .attach(AppDatabase::fairing())
     .mount("/", routes![index, postback, forword_to_xtream])
-    .mount("/assets", StaticFiles::from("/assets"))
     .manage(config);
 
   // Get database Connection.
