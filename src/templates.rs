@@ -4,7 +4,9 @@ use rocket::{
   Request, Response,
 };
 use std::io::Cursor;
-use typed_html::{dom::DOMTree, elements::FlowContent, html, text, OutputType};
+use typed_html::{
+  dom::DOMTree, elements::FlowContent, html, text, types::LinkType, OutputType,
+};
 
 const STYLES: &str = include_str!("./style.css");
 
@@ -33,6 +35,7 @@ pub fn doc<T: OutputType + 'static>(
             <title>{ text!("{}", page_title) }</title>
             <meta charset="utf-8" />
             <meta name="viewport" content="width=device-width, initial-scale=1" />
+            <link rel=LinkType::Icon type="image/x-icon" href="/assets/favicon.ico"/>
             <script
               defer={true}
               src="https://use.fontawesome.com/releases/v5.7.1/js/all.js"
