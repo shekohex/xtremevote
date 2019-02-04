@@ -4,8 +4,8 @@ use diesel_migrations::{
 use rocket_contrib::databases::diesel::connection::SimpleConnection;
 
 const ALL_MIGRATIONS: &[&Migration] = &[&EmbeddedMigration {
-  version: "20190203204345",
-  up_sql: include_str!("../migrations//20190203204345_create_votes/up.sql"),
+  version: "20190203204346",
+  up_sql: include_str!("../migrations//20190203204346_create_votes/up.sql"),
 }];
 
 struct EmbeddedMigration {

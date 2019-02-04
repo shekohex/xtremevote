@@ -28,3 +28,10 @@ version = "1.4.1"
 default-features = false
 features = ["mysql", "chrono"]
 
+[profile.release]
+opt-level = 3
+debug = false
+rpath = false
+lto = true
+debug-assertions = false
+codegen-units = 1
