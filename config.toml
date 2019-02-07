@@ -3,7 +3,7 @@ server_name = "COServer" # Your Server name, Also The Page Title
 site_id = 1132360401 # your service site id in xtreamtop100
 
 port = 8080 # The port to serve on.
-ip = "0.0.0.0" # The address to serve on. it would be your Server ip, leave it "0.0.0.0" to match all ips.
+ip = "0.0.0.0" # The address to serve on. it would be your Server ip.
 workers = 4 # The number of workers to run in parallel. (num_of_cpus * 2)
 
 # Control the log level.
@@ -26,7 +26,7 @@ log_level = "Normal"
 # and i think this ips from cloudflare !
 allowed_ips = [
   '::1', # I added this for localhost only, for debugging.
-  '127.0.0.1',
+  '127.0.0.1', # I added this for localhost only, for debugging.
   '104.24.112.108',
   '104.24.113.108',
   '2606:4700:30::6818:716c',

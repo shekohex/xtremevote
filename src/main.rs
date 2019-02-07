@@ -19,9 +19,11 @@ use rocket_contrib::database;
 use serde::{Deserialize, Serialize};
 use std::{
   collections::HashMap,
+  fmt,
   fs::File,
   io::Read,
   net::{IpAddr, Ipv4Addr},
+  ops::Deref,
 };
 mod db;
 
@@ -103,7 +105,20 @@ struct VotePostback {
   custom: String,
 }
 
-struct AllowedIPs(IpAddr);
+#[derive(Debug, PartialEq, Eq)]
+struct ClientIP(IpAddr);
+
+impl Deref for ClientIP {
+  type Target = IpAddr;
+
+  fn deref(&self) -> &Self::Target { &self.0 }
+}
+
+impl fmt::Display for ClientIP {
+  fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    write!(f, "{}", self.0)
+  }
+}
 
 #[derive(Responder)]
 enum VoteResult {
@@ -115,7 +130,17 @@ enum VoteResult {
   NotReadyForVote(&'static str),
 }
 
-impl<'a, 'r> FromRequest<'a, 'r> for AllowedIPs {
+#[derive(Responder)]
+enum ControllerResult {
+  #[response(status = 200)]
+  Success(String),
+  #[response(status = 401)]
+  IPNotAllowed(&'static str),
+  #[response(status = 500)]
+  DatabaseError(&'static str),
+}
+
+impl<'a, 'r> FromRequest<'a, 'r> for ClientIP {
   type Error = AppErrors;
 
   fn from_request(
@@ -140,13 +165,14 @@ fn index(config: State<AppConfig>) -> Html<String> {
 
 #[get("/postback?<data..>")]
 fn postback(
-  guard: AllowedIPs,
+  client_ip: ClientIP,
   data: Form<VotePostback>,
   config: State<AppConfig>,
   conn: AppDatabase,
 ) -> VoteResult {
-  if !config.allowed_ips.contains(&guard.0) {
-    println!("Got Not allowed IP {}", guard.0);
+  println!("Got POSTBACK Request from IP {}", client_ip);
+  if !config.allowed_ips.contains(&client_ip) {
+    println!("Got Not allowed IP {}", client_ip);
     return VoteResult::IPNotAllowed(NOT_ALLOWED);
   }
   if let Err(e) = vote(
@@ -159,6 +185,48 @@ fn postback(
     VoteResult::NotReadyForVote("Your Account Is Not ready for vote yet")
   } else {
     VoteResult::Success(())
+  }
+}
+
+#[get("/points?<u>")]
+fn get_user_points(
+  client_ip: ClientIP,
+  conn: AppDatabase,
+  u: String,
+) -> ControllerResult {
+  use db::uvotes::dsl::{points, username, uvotes};
+  if client_ip.0 != Ipv4Addr::from([127, 0, 0, 1]) {
+    ControllerResult::IPNotAllowed("You Cant't view this page.")
+  } else {
+    ControllerResult::Success(
+      uvotes
+        .filter(username.eq(&u))
+        .select(points)
+        .first::<i32>(&conn.0)
+        .unwrap_or_default()
+        .to_string(),
+    )
+  }
+}
+
+#[post("/points?<u>&<p>")]
+fn update_user_points(
+  client_ip: ClientIP,
+  conn: AppDatabase,
+  u: String,
+  p: i32,
+) -> ControllerResult {
+  use db::uvotes::dsl::{points, username, uvotes};
+  if client_ip.0 != Ipv4Addr::from([127, 0, 0, 1]) {
+    ControllerResult::IPNotAllowed("You Cant't view this page.")
+  } else if let Err(e) = diesel::update(uvotes.filter(username.eq(&u)))
+    .set(points.eq(p))
+    .execute(&conn.0)
+  {
+    eprintln!("{}", e);
+    ControllerResult::DatabaseError("Error While Updating That user.")
+  } else {
+    ControllerResult::Success(p.to_string())
   }
 }
 
@@ -180,7 +248,7 @@ fn vote(
 ) -> Result<(), AppErrors> {
   use db::{
     models::{UVotes, UserVote},
-    uvotes::dsl::*,
+    uvotes::dsl::{points, username, uvotes, votingip},
   };
   if let Ok(mut current_user) = uvotes
     .filter(username.eq(&data.custom))
@@ -191,12 +259,15 @@ fn vote(
     let current_time = chrono::Local::now().naive_local();
     let diff = current_time - current_user.last_vote;
     let limit = chrono::Duration::hours(i64::from(time_limit));
-    if diff < limit {
+    if diff < limit && data.votingip.to_string() == current_user.votingip {
       return Err(AppErrors::NotReadyForVote);
     }
     current_user.points += points_per_vote as i32;
     diesel::update(uvotes.filter(username.eq(&data.custom)))
-      .set(points.eq(current_user.points))
+      .set((
+        votingip.eq(data.votingip.to_string()),
+        points.eq(current_user.points),
+      ))
       .execute(&conn.0)
       .map_err(|e| AppErrors::DatabaseError(e.to_string()))?;
   } else {
@@ -240,7 +311,16 @@ fn main() -> Result<(), ExitFailure> {
 
   let server = rocket::custom(dbconfig)
     .attach(AppDatabase::fairing())
-    .mount("/", routes![index, postback, forword_to_xtream])
+    .mount(
+      "/",
+      routes![
+        index,
+        postback,
+        forword_to_xtream,
+        get_user_points,
+        update_user_points
+      ],
+    )
     .manage(config);
 
   // Get database Connection.
