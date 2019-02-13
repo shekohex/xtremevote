@@ -63,6 +63,7 @@ impl From<LoggingLevel> for rocket::config::LoggingLevel {
 struct AppConfig {
   server_name: String,
   allowed_ips: Vec<IpAddr>,
+  admin_ips: Vec<IpAddr>,
   site_id: u32,
   vote_config: VoteConfig,
   port: u16,
@@ -191,11 +192,12 @@ fn postback(
 #[get("/points?<u>")]
 fn get_user_points(
   client_ip: ClientIP,
+  config: State<AppConfig>,
   conn: AppDatabase,
   u: String,
 ) -> ControllerResult {
   use db::uvotes::dsl::{points, username, uvotes};
-  if client_ip.0 != Ipv4Addr::from([127, 0, 0, 1]) {
+  if !config.admin_ips.contains(&client_ip) {
     ControllerResult::IPNotAllowed("You Cant't view this page.")
   } else {
     ControllerResult::Success(
@@ -213,11 +215,12 @@ fn get_user_points(
 fn update_user_points(
   client_ip: ClientIP,
   conn: AppDatabase,
+  config: State<AppConfig>,
   u: String,
   p: i32,
 ) -> ControllerResult {
   use db::uvotes::dsl::{points, username, uvotes};
-  if client_ip.0 != Ipv4Addr::from([127, 0, 0, 1]) {
+  if !config.admin_ips.contains(&client_ip) {
     ControllerResult::IPNotAllowed("You Cant't view this page.")
   } else if let Err(e) = diesel::update(uvotes.filter(username.eq(&u)))
     .set(points.eq(p))

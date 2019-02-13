@@ -33,6 +33,12 @@ allowed_ips = [
   '2606:4700:30::6818:706c',
   ]
 
+# A list of allowed ip to control the players points
+admin_ips = [
+  '::1',
+  '127.0.0.1',
+]
+
 # This the sqlite database url, or the place where it should be created.
 database_url = "votes.db"
 
